@@ -1,20 +1,17 @@
 const express = require("express");
 const router = express.Router();
-const path = require("path");
-const fs = require("fs-extra");
 const Bill = require("../models/Bill");
 const Order = require("../models/Order");
 const Product = require("../models/Product");
 const Customer = require("../models/Customer");
 const genToken = require("../utils/genToken");
-const generateBillPdf = require("../utils/generatePdf");
 
 // ------------------------------
 // CREATE BILL (WITH ORDER OPTION)
 // ------------------------------
 router.post("/create", async (req, res) => {
   try {
-    const { customerId, items, createOrder } = req.body;
+    const { customerId, items } = req.body;
 
     if (!customerId || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ message: "customerId and items required" });
@@ -61,26 +58,17 @@ router.post("/create", async (req, res) => {
       status: "PENDING"
     });
 
+    // Create Order
     const order = await Order.create({
-        customerId,
-        items: builtItems,
-        grandTotal,
-        billId: bill._id, // Link to the bill
-        status: "PENDING" // Set initial status
-      });
-
-    // Generate PDF
-    const shopInfo = {
-      name: process.env.SHOP_NAME,
-      address: process.env.SHOP_ADDRESS,
-      phone: process.env.SHOP_PHONE,
-      upi: process.env.SHOP_UPI
-    };
-    const { filename } = await generateBillPdf(bill, shopInfo);
-    bill.pdfFilename = filename;
-    await bill.save();
+      customerId,
+      items: builtItems,
+      grandTotal,
+      billId: bill._id,
+      status: "PENDING"
+    });
 
     res.json({ success: true, bill, order });
+
   } catch (err) {
     console.error("❌ Error creating bill:", err);
     res.status(500).json({ message: err.message });
@@ -88,7 +76,7 @@ router.post("/create", async (req, res) => {
 });
 
 // ------------------------------
-// LIST BILLS / ORDERS
+// LIST BILLS
 // ------------------------------
 router.get("/list", async (req, res) => {
   try {
@@ -208,31 +196,6 @@ router.patch("/:id/complete", async (req, res) => {
 
     await bill.save();
     res.json({ success: true, bill });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
-
-// ------------------------------
-// REGENERATE PDF
-// ------------------------------
-router.post("/:id/generate-pdf", async (req, res) => {
-  try {
-    const bill = await Bill.findById(req.params.id);
-    if (!bill) return res.status(404).json({ message: "Bill not found" });
-
-    const shopInfo = {
-      name: process.env.SHOP_NAME,
-      address: process.env.SHOP_ADDRESS,
-      phone: process.env.SHOP_PHONE,
-      upi: process.env.SHOP_UPI
-    };
-
-    const { filename } = await generateBillPdf(bill, shopInfo);
-    bill.pdfFilename = filename;
-    await bill.save();
-
-    res.json({ success: true, filename, pdfUrl: `/uploads/bills/${filename}` });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

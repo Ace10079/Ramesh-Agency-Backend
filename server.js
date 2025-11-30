@@ -19,6 +19,7 @@ app.use("/product", require("./routes/productRoutes"));
 app.use("/customer", require("./routes/customerRoutes"));
 app.use("/order", require("./routes/orderRoutes"));
 app.use("/bill", require("./routes/billRoutes"));
+app.use("/measurement", require("./routes/measurementRoutes"));
 
 app.get("/", (req, res) => res.send("Backend Running..."));
 

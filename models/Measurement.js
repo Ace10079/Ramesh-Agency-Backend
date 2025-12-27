@@ -6,6 +6,12 @@ const measurementSchema = new mongoose.Schema({
     ref: "Order",
     required: true,
   },
+  groupId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "MeasurementGroup",
+    required: true,
+  },
+  
   productId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Product",
